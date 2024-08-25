@@ -3,8 +3,18 @@ from ui.ui_budget_main import Ui_MainWindow
 from structs.finance_item import *
 
 from globals import app_name
+from decimal import *
+
+# Some constants for consistency
+_DAYS_IN_WEEK = 7
+# Based on days in a year divided by months in a year
+_DAYS_IN_MONTH = 30.4
+_DAYS_IN_YEAR = 365
+_WEEKS_IN_YEAR = 52
+_MONTHS_IN_YEAR = 12
 
 
+# Generate and display an error message with supplied text
 def err_msg(title, text):
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Critical)
@@ -14,29 +24,40 @@ def err_msg(title, text):
     msg.exec_()
 
 
+rounding_num = Decimal(10) ** -2
+
+
+def round_decimal(num: Decimal) -> Decimal:
+    return num.quantize(rounding_num)
+
+
+# Calculate the total costs for all categories
+# These are some really rough estimates based on some serious assumptions
 def build_item(item):
-    if item.freq == Frequency.DAILY:
-        item.daily = item.cost
-        item.weekly = item.daily * 7
-        item.monthly = item.weekly * 4
-        item.annually = item.monthly * 12
-    elif item.freq == Frequency.WEEKLY:
-        item.weekly = item.cost
-        item.daily = round(item.weekly / 7, 2)
-        item.monthly = item.weekly * 4
-        item.annually = item.weekly * 52
-    elif item.freq == Frequency.MONTHLY:
-        item.monthly = item.cost
-        item.weekly = round(item.monthly / 4, 2)
-        item.daily = round(item.weekly / 7, 2)
-        item.annually = item.monthly * 12
-    elif item.freq == Frequency.ANNUALLY:
-        item.annually = item.cost
-        item.monthly = round(item.annually / 12, 2)
-        item.weekly = round(item.monthly / 4, 2)
-        item.daily = round(item.annually / 365, 2)
+    match item.freq:
+        case Frequency.DAILY:
+            item.daily = item.cost
+            item.weekly = item.daily * _DAYS_IN_WEEK
+            item.monthly = item.daily * _DAYS_IN_MONTH
+            item.annually = item.daily * _DAYS_IN_YEAR
+        case Frequency.WEEKLY:
+            item.weekly = item.cost
+            item.daily = round_decimal(item.weekly / Decimal(_DAYS_IN_WEEK))
+            item.monthly = item.daily * _DAYS_IN_MONTH
+            item.annually = item.weekly * _WEEKS_IN_YEAR
+        case Frequency.MONTHLY:
+            item.monthly = item.cost
+            item.daily = round_decimal(item.monthly / Decimal(_DAYS_IN_MONTH))
+            item.weekly = item.daily * _DAYS_IN_WEEK
+            item.annually = item.monthly * _MONTHS_IN_YEAR
+        case Frequency.ANNUALLY:
+            item.annually = item.cost
+            item.monthly = round_decimal(item.annually / Decimal(_MONTHS_IN_YEAR))
+            item.weekly = round_decimal(item.annually / Decimal(_WEEKS_IN_YEAR))
+            item.daily = round_decimal(item.annually / Decimal(_DAYS_IN_YEAR))
 
 
+# Display a simple about popup
 def on_about():
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Information)
@@ -49,6 +70,7 @@ def on_about():
     msg.exec_()
 
 
+# Main window logic class
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
@@ -76,7 +98,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         item = FinanceItem()
         item.name = self.AItemName.text()
 
-        item.cost = float(self.AItemCost.text())
+        item.cost = Decimal(self.AItemCost.text())
 
         item.note = self.AItemNote.text()
 
@@ -108,10 +130,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.hasChanges = True
 
     def recalc(self):
-        daily = 0.0
-        weekly = 0.0
-        monthly = 0.0
-        annually = 0.0
+        daily = Decimal(0)
+        weekly = Decimal(0)
+        monthly = Decimal(0)
+        annually = Decimal(0)
 
         for item in self.ItemData:
             daily += item.daily
@@ -119,10 +141,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             monthly += item.monthly
             annually += item.annually
 
-        self.DailyTotal.setText(f'${round(daily, 2)}')
-        self.WeeklyTotal.setText(f'${round(weekly, 2)}')
-        self.MonthlyTotal.setText(f'${round(monthly, 2)}')
-        self.AnnualTotal.setText(f'${round(annually, 2)}')
+        self.DailyTotal.setText(f'${daily}')
+        self.WeeklyTotal.setText(f'${weekly}')
+        self.MonthlyTotal.setText(f'${monthly}')
+        self.AnnualTotal.setText(f'${annually}')
 
         self.lbItemsBox.selectedItems().clear()
 
@@ -188,7 +210,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 continue
 
             item.name = objects[0]
-            item.cost = float(objects[1])
+            item.cost = Decimal(objects[1])
 
             item.freq = Frequency[objects[2].strip()]
             item.note = objects[3].strip()

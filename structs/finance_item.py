@@ -1,6 +1,8 @@
 from enum import Enum
 from dataclasses import dataclass
 
+from decimal import *
+
 
 class Frequency(Enum):
     DAILY = 1
@@ -13,9 +15,9 @@ class Frequency(Enum):
 class FinanceItem:
     name: str = ''
     freq: Frequency = Frequency.DAILY
-    cost: float = 0
-    daily: float = 0
-    weekly: float = 0
-    monthly: float = 0
-    annually: float = 0
+    cost: Decimal = 0
+    daily: Decimal = 0
+    weekly: Decimal = 0
+    monthly: Decimal = 0
+    annually: Decimal = 0
     note: str = ''
