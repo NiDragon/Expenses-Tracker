@@ -8,7 +8,7 @@ from decimal import *
 # Some constants for consistency
 _DAYS_IN_WEEK = 7
 # Based on days in a year divided by months in a year
-_DAYS_IN_MONTH = 30.4
+_DAYS_IN_MONTH = 30.417
 _DAYS_IN_YEAR = 365
 _WEEKS_IN_YEAR = 52
 _MONTHS_IN_YEAR = 12
